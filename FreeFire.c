@@ -1,70 +1,218 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <string.h>
 
-// Código da Ilha – Edição Free Fire
-// Nível: Mestre
-// Este programa simula o gerenciamento avançado de uma mochila com componentes coletados durante a fuga de uma ilha.
-// Ele introduz ordenação com critérios e busca binária para otimizar a gestão dos recursos.
+#define TAM_MAX 50   // Capacidade da lista estática
+#define TAM_NOME 50  // Tamanho máximo do nome do item
 
-int main() {
-    // Menu principal com opções:
-    // 1. Adicionar um item
-    // 2. Remover um item
-    // 3. Listar todos os itens
-    // 4. Ordenar os itens por critério (nome, tipo, prioridade)
-    // 5. Realizar busca binária por nome
-    // 0. Sair
+typedef struct {
+    char nome[TAM_NOME];
+    int poder;
+} Item;
 
-    // A estrutura switch trata cada opção chamando a função correspondente.
-    // A ordenação e busca binária exigem que os dados estejam bem organizados.
+typedef struct {
+    Item itens[TAM_MAX];
+    int qtd;
+} ListaEstatica;
 
+typedef struct Nodo {
+    Item item;
+    struct Nodo *prox;
+} Nodo;
+
+typedef struct {
+    Nodo *inicio;
+} ListaEncadeada;
+
+void inicializarListaEstatica(ListaEstatica *l) {
+    l->qtd = 0;
+}
+
+int inserirListaEstatica(ListaEstatica *l, Item item) {
+    if (l->qtd >= TAM_MAX) {
+        printf("❌ Lista estática cheia!\n");
+        return 0;
+    }
+    l->itens[l->qtd++] = item;
+    return 1;
+}
+
+int removerListaEstatica(ListaEstatica *l, char nome[]) {
+    for (int i = 0; i < l->qtd; i++) {
+        if (strcmp(l->itens[i].nome, nome) == 0) {
+            for (int j = i; j < l->qtd - 1; j++) {
+                l->itens[j] = l->itens[j + 1];
+            }
+            l->qtd--;
+            return 1;
+        }
+    }
     return 0;
 }
 
-// Struct Item:
-// Representa um componente com nome, tipo, quantidade e prioridade (1 a 5).
-// A prioridade indica a importância do item na montagem do plano de fuga.
+void listarListaEstatica(ListaEstatica *l) {
+    if (l->qtd == 0) {
+        printf("Lista estática vazia.\n");
+        return;
+    }
+    printf("=== Itens da Lista Estática ===\n");
+    for (int i = 0; i < l->qtd; i++) {
+        printf("%d. %s (Poder: %d)\n", i + 1, l->itens[i].nome, l->itens[i].poder);
+    }
+}
 
-// Enum CriterioOrdenacao:
-// Define os critérios possíveis para a ordenação dos itens (nome, tipo ou prioridade).
+Item* buscarListaEstatica(ListaEstatica *l, char nome[]) {
+    for (int i = 0; i < l->qtd; i++) {
+        if (strcmp(l->itens[i].nome, nome) == 0) {
+            return &l->itens[i];
+        }
+    }
+    return NULL;
+}
 
-// Vetor mochila:
-// Armazena até 10 itens coletados.
-// Variáveis de controle: numItens (quantidade atual), comparacoes (análise de desempenho), ordenadaPorNome (para controle da busca binária).
+void inicializarListaEncadeada(ListaEncadeada *l) {
+    l->inicio = NULL;
+}
 
-// limparTela():
-// Simula a limpeza da tela imprimindo várias linhas em branco.
+void inserirListaEncadeada(ListaEncadeada *l, Item item) {
+    Nodo *novo = (Nodo*)malloc(sizeof(Nodo));
+    novo->item = item;
+    novo->prox = l->inicio;
+    l->inicio = novo;
+}
 
-// exibirMenu():
-// Apresenta o menu principal ao jogador, com destaque para status da ordenação.
+int removerListaEncadeada(ListaEncadeada *l, char nome[]) {
+    Nodo *ant = NULL, *atual = l->inicio;
+    while (atual != NULL && strcmp(atual->item.nome, nome) != 0) {
+        ant = atual;
+        atual = atual->prox;
+    }
+    if (atual == NULL)
+        return 0;
+    if (ant == NULL)
+        l->inicio = atual->prox;
+    else
+        ant->prox = atual->prox;
+    free(atual);
+    return 1;
+}
 
-// inserirItem():
-// Adiciona um novo componente à mochila se houver espaço.
-// Solicita nome, tipo, quantidade e prioridade.
-// Após inserir, marca a mochila como "não ordenada por nome".
+void listarListaEncadeada(ListaEncadeada *l) {
+    if (l->inicio == NULL) {
+        printf("Lista encadeada vazia.\n");
+        return;
+    }
+    printf("=== Itens da Lista Encadeada ===\n");
+    Nodo *aux = l->inicio;
+    int i = 1;
+    while (aux != NULL) {
+        printf("%d. %s (Poder: %d)\n", i++, aux->item.nome, aux->item.poder);
+        aux = aux->prox;
+    }
+}
 
-// removerItem():
-// Permite remover um componente da mochila pelo nome.
-// Se encontrado, reorganiza o vetor para preencher a lacuna.
+Item* buscarListaEncadeada(ListaEncadeada *l, char nome[]) {
+    Nodo *aux = l->inicio;
+    while (aux != NULL) {
+        if (strcmp(aux->item.nome, nome) == 0)
+            return &aux->item;
+        aux = aux->prox;
+    }
+    return NULL;
+}
 
-// listarItens():
-// Exibe uma tabela formatada com todos os componentes presentes na mochila.
+void exibirMenu() {
+    printf("\n=== MENU DE AVENTURA ===\n");
+    printf("1. Inserir item na lista estática\n");
+    printf("2. Remover item da lista estática\n");
+    printf("3. Listar itens da lista estática\n");
+    printf("4. Buscar item na lista estática\n");
+    printf("5. Inserir item na lista encadeada\n");
+    printf("6. Remover item da lista encadeada\n");
+    printf("7. Listar itens da lista encadeada\n");
+    printf("8. Buscar item na lista encadeada\n");
+    printf("0. Sair\n");
+    printf("Escolha: ");
+}
 
-// menuDeOrdenacao():
-// Permite ao jogador escolher como deseja ordenar os itens.
-// Utiliza a função insertionSort() com o critério selecionado.
-// Exibe a quantidade de comparações feitas (análise de desempenho).
+Item criarItem() {
+    Item item;
+    printf("Nome do item: ");
+    scanf(" %[^\n]", item.nome);
+    printf("Poder do item: ");
+    scanf("%d", &item.poder);
+    return item;
+}
 
-// insertionSort():
-// Implementação do algoritmo de ordenação por inserção.
-// Funciona com diferentes critérios de ordenação:
-// - Por nome (ordem alfabética)
-// - Por tipo (ordem alfabética)
-// - Por prioridade (da mais alta para a mais baixa)
+int main() {
+    ListaEstatica listaE;
+    ListaEncadeada listaL;
+    inicializarListaEstatica(&listaE);
+    inicializarListaEncadeada(&listaL);
 
-// buscaBinariaPorNome():
-// Realiza busca binária por nome, desde que a mochila esteja ordenada por nome.
-// Se encontrar, exibe os dados do item buscado.
-// Caso contrário, informa que não encontrou o item.
+    int opcao;
+    char nome[TAM_NOME];
+
+    do {
+        exibirMenu();
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+            case 1:
+                if (inserirListaEstatica(&listaE, criarItem()))
+                    printf("✅ Item inserido na lista estática!\n");
+                break;
+            case 2:
+                printf("Nome do item a remover: ");
+                scanf(" %[^\n]", nome);
+                if (removerListaEstatica(&listaE, nome))
+                    printf("✅ Item removido!\n");
+                else
+                    printf("❌ Item não encontrado!\n");
+                break;
+            case 3:
+                listarListaEstatica(&listaE);
+                break;
+            case 4:
+                printf("Nome do item a buscar: ");
+                scanf(" %[^\n]", nome);
+                Item *encontradoE = buscarListaEstatica(&listaE, nome);
+                if (encontradoE)
+                    printf("Encontrado: %s (Poder: %d)\n", encontradoE->nome, encontradoE->poder);
+                else
+                    printf("❌ Item não encontrado!\n");
+                break;
+            case 5:
+                inserirListaEncadeada(&listaL, criarItem());
+                printf("✅ Item inserido na lista encadeada!\n");
+                break;
+            case 6:
+                printf("Nome do item a remover: ");
+                scanf(" %[^\n]", nome);
+                if (removerListaEncadeada(&listaL, nome))
+                    printf("✅ Item removido!\n");
+                else
+                    printf("❌ Item não encontrado!\n");
+                break;
+            case 7:
+                listarListaEncadeada(&listaL);
+                break;
+            case 8:
+                printf("Nome do item a buscar: ");
+                scanf(" %[^\n]", nome);
+                Item *encontradoL = buscarListaEncadeada(&listaL, nome);
+                if (encontradoL)
+                    printf("Encontrado: %s (Poder: %d)\n", encontradoL->nome, encontradoL->poder);
+                else
+                    printf("❌ Item não encontrado!\n");
+                break;
+            case 0:
+                printf("Saindo do jogo...\n");
+                break;
+            default:
+                printf("❌ Opção inválida!\n");
+        }
+    } while (opcao != 0);
+
+    return 0;
+}
